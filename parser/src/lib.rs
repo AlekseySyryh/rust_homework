@@ -1,35 +1,54 @@
-use std::io::{Error, Read, Write};
+pub mod error;
 
-#[derive(Debug, PartialEq)]
+use crate::error::{ReaderError, WriterError};
+
+#[derive(Debug, PartialEq, Default)]
 pub struct Transaction {
-    pub tx_id: u64
+    pub tx_id: u64,
+    pub tx_type: TxType,
+    pub from_user_id: u64,
+    pub to_user_id: u64,
+    pub amount: u64,
+    pub timestamp: u64,
+    pub status: Status,
+    pub description: String,
 }
 
-pub trait TransactionCodec {
-    fn read_tx<R: Read>(data: &mut R) -> Result<Option<Transaction>, Error>;
-    fn write_tx<W: Write>(data: &mut W, tx: &Transaction) -> Result<(), Error>;
+#[derive(Debug, PartialEq, Default)]
+pub enum TxType {
+    DEPOSIT,
+    #[default]
+    TRANSFER,
+    WITHDRAWAL,
 }
 
-pub struct TransactionReader;
+#[derive(Debug, PartialEq, Default)]
+pub enum Status {
+    #[default]
+    SUCCESS,
+    FAILURE,
+    PENDING,
+}
 
-impl TransactionReader {
-    pub fn read<R: Read, T: TransactionCodec>(data: &mut R) -> Result<Vec<Transaction>, Error> {
+pub trait TransactionReader {
+    fn read_tx(&mut self) -> Result<Option<Transaction>, ReaderError>;
+
+    fn read_vector(&mut self) -> Result<Vec<Transaction>, ReaderError> {
         let mut result: Vec<Transaction> = Vec::new();
 
-        while let Some(tx) = T::read_tx(data)? {
+        while let Some(tx) = self.read_tx()? {
             result.push(tx);
         }
 
         Ok(result)
     }
 }
+pub trait TransactionWriter {
+    fn write_tx(&mut self, tx: &Transaction) -> Result<(), WriterError>;
 
-pub struct TransactionWriter;
-
-impl TransactionWriter {
-    pub fn write<W: Write, T: TransactionCodec>(data: &mut W, txs: &Vec<Transaction>) -> Result<(), Error> {
+    fn write_vector(&mut self, txs: &[Transaction]) -> Result<(), WriterError> {
         for tx in txs {
-            T::write_tx(data, tx)?;
+            self.write_tx(tx)?;
         }
         Ok(())
     }
@@ -38,32 +57,45 @@ impl TransactionWriter {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::io::{Read, Write};
 
-    struct FakeCodec;
-
-    impl TransactionCodec for FakeCodec {
-        fn read_tx<R: Read>(data: &mut R) -> Result<Option<Transaction>, Error> {
-            let mut buf = [0u8; 1];
-
-            match data.read(&mut buf)? {
-                0 => Ok(None),
-                _ => Ok(Some(Transaction {
-                    tx_id: buf[0] as u64
-                })),
+    impl Transaction {
+        fn new(tx_id: u8) -> Self {
+            Transaction {
+                tx_id: tx_id as u64,
+                ..Default::default()
             }
         }
+    }
 
-        fn write_tx<W: Write>(data: &mut W, tx: &Transaction) -> Result<(), Error> {
-            data.write(&[tx.tx_id as u8])?;
-            Ok(())
+    struct FakeReader<R: Read> {
+        data: R,
+    }
+
+    impl<R: Read> TransactionReader for FakeReader<R> {
+        fn read_tx(&mut self) -> Result<Option<Transaction>, ReaderError> {
+            let mut buf = [0u8; 1];
+
+            match self.data.read(&mut buf) {
+                Ok(len) => match len {
+                    0 => Ok(None),
+                    _ => Ok(Some(Transaction::new(buf[0]))),
+                },
+                Err(e) => Err(ReaderError::ParseError(format!(
+                    "Failed to read transaction: {}",
+                    e
+                ))),
+            }
         }
     }
 
     #[test]
     fn test_read_multiple_transactions() {
-        let mut data = &vec![10, 20, 30][..];
+        let data: &[u8] = &[10, 20, 30];
 
-        let result = TransactionReader::read::<_, FakeCodec>(&mut data).unwrap();
+        let mut reader: Box<dyn TransactionReader> = Box::new(FakeReader { data: data });
+
+        let result = reader.read_vector().unwrap();
 
         assert_eq!(result.len(), 3);
         assert_eq!(result[0].tx_id, 10);
@@ -71,14 +103,65 @@ mod tests {
         assert_eq!(result[2].tx_id, 30);
     }
 
+    struct FakeWriter<W: Write> {
+        data: W,
+    }
+
+    impl<W: Write> TransactionWriter for FakeWriter<W> {
+        fn write_tx(&mut self, tx: &Transaction) -> Result<(), WriterError> {
+            self.data.write_all(&[tx.tx_id as u8]).map_err(|e| {
+                WriterError::WriterError(format!("Failed to write transaction: {}", e))
+            })
+        }
+    }
+
     #[test]
     fn test_write_multiple_transactions() {
-        let txs: &Vec<Transaction> = &vec![Transaction { tx_id: 10 }, Transaction { tx_id: 20 }, Transaction { tx_id: 30 }];
+        let txs: &Vec<Transaction> = &vec![
+            Transaction::new(10),
+            Transaction::new(20),
+            Transaction::new(30),
+        ];
 
-        let mut data = Vec::new();
+        let mut output = Vec::new();
+        {
+            let mut writer = FakeWriter { data: &mut output };
+            writer.write_vector(txs).unwrap();
+        }
+        assert_eq!(output, vec![10, 20, 30]);
+    }
 
-        TransactionWriter::write::<_, FakeCodec>(&mut data, &txs).unwrap();
+    struct ErrorReader;
+    impl TransactionReader for ErrorReader {
+        fn read_tx(&mut self) -> Result<Option<Transaction>, ReaderError> {
+            Err(ReaderError::ParseError("Error".to_string()))
+        }
+    }
 
-        assert_eq!(data, vec![10, 20, 30]);
+    #[test]
+    fn test_read_error() {
+        let mut reader = ErrorReader;
+        let result = reader.read_vector();
+        assert_eq!(result, Err(ReaderError::ParseError("Error".to_string())));
+    }
+
+    struct ErrorWriter;
+    impl TransactionWriter for ErrorWriter {
+        fn write_tx(&mut self, _tx: &Transaction) -> Result<(), WriterError> {
+            Err(WriterError::WriterError("Error".to_string()))
+        }
+    }
+    #[test]
+    fn test_write_error() {
+        let mut writer = ErrorWriter;
+
+        let txs: &Vec<Transaction> = &vec![
+            Transaction::new(10),
+            Transaction::new(20),
+            Transaction::new(30),
+        ];
+
+        let result = writer.write_vector(txs);
+        assert_eq!(result, Err(WriterError::WriterError("Error".to_string())));
     }
 }
