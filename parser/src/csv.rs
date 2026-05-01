@@ -173,17 +173,18 @@ impl<W: Write> CsvWriter<W> {
     /// use parser::{CsvWriter, TransactionWriter, Transaction, TxType, Status};
     ///
     /// let transactions = vec![
-    /// Transaction {
-    ///     tx_id: 1000000000000000,
-    ///     tx_type: TxType::DEPOSIT,
-    ///     from_user_id: 0,
-    ///     to_user_id: 9223372036854775807,
-    ///     amount: 100,
-    ///     timestamp: 1633036860000,
-    ///     status: Status::FAILURE,
-    ///     description: "Record number 1".to_string(),
-    ///   }, Transaction {
-    ///    tx_id: 1000000000000001,
+    ///     Transaction {
+    ///         tx_id: 1000000000000000,
+    ///         tx_type: TxType::DEPOSIT,
+    ///         from_user_id: 0,
+    ///         to_user_id: 9223372036854775807,
+    ///         amount: 100,
+    ///         timestamp: 1633036860000,
+    ///         status: Status::FAILURE,
+    ///         description: "Record number 1".to_string(),
+    ///     }, 
+    ///     Transaction {
+    ///        tx_id: 1000000000000001,
     ///        tx_type: TxType::TRANSFER,
     ///        from_user_id: 9223372036854775807,
     ///        to_user_id: 9223372036854775807,
@@ -191,7 +192,8 @@ impl<W: Write> CsvWriter<W> {
     ///        timestamp: 1633036920000,
     ///        status: Status::PENDING,
     ///        description: "Record number 2".to_string(),
-    ///    }, Transaction {
+    ///     }, 
+    ///     Transaction {
     ///        tx_id: 1000000000000002,
     ///        tx_type: TxType::WITHDRAWAL,
     ///        from_user_id: 599094029349995112,
@@ -208,12 +210,14 @@ impl<W: Write> CsvWriter<W> {
     ///
     ///        writer.write_vector(&transactions).unwrap();
     ///    }
-    /// let expected_csv_data = "TX_ID,TX_TYPE,FROM_USER_ID,TO_USER_ID,AMOUNT,TIMESTAMP,STATUS,DESCRIPTION
-    /// 1000000000000000,DEPOSIT,0,9223372036854775807,100,1633036860000,FAILURE,\"Record number 1\"
-    /// 1000000000000001,TRANSFER,9223372036854775807,9223372036854775807,200,1633036920000,PENDING,\"Record number 2\"
-    /// 1000000000000002,WITHDRAWAL,599094029349995112,0,300,1633036980000,SUCCESS,\"Record number 3\"\n";
+    /// 
+    ///     let expected_csv_data = "TX_ID,TX_TYPE,FROM_USER_ID,TO_USER_ID,AMOUNT,TIMESTAMP,STATUS,DESCRIPTION
+    ///1000000000000000,DEPOSIT,0,9223372036854775807,100,1633036860000,FAILURE,\"Record number 1\"
+    ///1000000000000001,TRANSFER,9223372036854775807,9223372036854775807,200,1633036920000,PENDING,\"Record number 2\"
+    ///1000000000000002,WITHDRAWAL,599094029349995112,0,300,1633036980000,SUCCESS,\"Record number 3\"\n";
     ///
     ///    let csv_data = String::from_utf8(data).unwrap();
+    /// 
     ///    assert_eq!(csv_data, expected_csv_data);
 
     /// ```
