@@ -1,6 +1,12 @@
+pub mod csv;
 pub mod error;
 
-use crate::error::{ReaderError, WriterError};
+pub use csv::{CsvReader, CsvWriter};
+pub use error::{ReaderError, WriterError};
+
+use std::{fmt::Display, str::FromStr};
+
+use crate::error::ParseError;
 
 #[derive(Debug, PartialEq, Default)]
 pub struct Transaction {
@@ -22,6 +28,32 @@ pub enum TxType {
     WITHDRAWAL,
 }
 
+impl Display for TxType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(match self {
+            TxType::DEPOSIT => "DEPOSIT",
+            TxType::TRANSFER => "TRANSFER",
+            TxType::WITHDRAWAL => "WITHDRAWAL",
+        })
+    }
+}
+
+impl FromStr for TxType {
+    type Err = ParseError;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "DEPOSIT" => Ok(TxType::DEPOSIT),
+            "TRANSFER" => Ok(TxType::TRANSFER),
+            "WITHDRAWAL" => Ok(TxType::WITHDRAWAL),
+            _ => Err(ParseError {
+                field_name: error::FieldName::TxType,
+                value: s.to_string(),
+            }),
+        }
+    }
+}
+
 #[derive(Debug, PartialEq, Default)]
 pub enum Status {
     #[default]
@@ -30,9 +62,37 @@ pub enum Status {
     PENDING,
 }
 
+impl Display for Status {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(match self {
+            Status::SUCCESS => "SUCCESS",
+            Status::FAILURE => "FAILURE",
+            Status::PENDING => "PENDING",
+        })
+    }
+}
+
+impl FromStr for Status {
+    type Err = ParseError;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "SUCCESS" => Ok(Status::SUCCESS),
+            "FAILURE" => Ok(Status::FAILURE),
+            "PENDING" => Ok(Status::PENDING),
+            _ => Err(ParseError {
+                field_name: error::FieldName::Status,
+                value: s.to_string(),
+            }),
+        }
+    }
+}
+
 pub trait TransactionReader {
+    #[must_use = "Reading may failed, check the result"]
     fn read_tx(&mut self) -> Result<Option<Transaction>, ReaderError>;
 
+    #[must_use = "Reading may fail, check the result"]
     fn read_vector(&mut self) -> Result<Vec<Transaction>, ReaderError> {
         let mut result: Vec<Transaction> = Vec::new();
 
@@ -44,8 +104,10 @@ pub trait TransactionReader {
     }
 }
 pub trait TransactionWriter {
+    #[must_use = "Writing may fail, check the result"]
     fn write_tx(&mut self, tx: &Transaction) -> Result<(), WriterError>;
 
+    #[must_use = "Writing may fail, check the result"]
     fn write_vector(&mut self, txs: &[Transaction]) -> Result<(), WriterError> {
         for tx in txs {
             self.write_tx(tx)?;
@@ -81,7 +143,7 @@ mod tests {
                     0 => Ok(None),
                     _ => Ok(Some(Transaction::new(buf[0]))),
                 },
-                Err(e) => Err(ReaderError::ParseError(format!(
+                Err(e) => Err(ReaderError::FileFormatError(format!(
                     "Failed to read transaction: {}",
                     e
                 ))),
@@ -93,7 +155,7 @@ mod tests {
     fn test_read_multiple_transactions() {
         let data: &[u8] = &[10, 20, 30];
 
-        let mut reader: Box<dyn TransactionReader> = Box::new(FakeReader { data: data });
+        let mut reader: Box<dyn TransactionReader> = Box::new(FakeReader { data });
 
         let result = reader.read_vector().unwrap();
 
@@ -134,7 +196,7 @@ mod tests {
     struct ErrorReader;
     impl TransactionReader for ErrorReader {
         fn read_tx(&mut self) -> Result<Option<Transaction>, ReaderError> {
-            Err(ReaderError::ParseError("Error".to_string()))
+            Err(ReaderError::FileFormatError("Error".to_string()))
         }
     }
 
@@ -142,7 +204,10 @@ mod tests {
     fn test_read_error() {
         let mut reader = ErrorReader;
         let result = reader.read_vector();
-        assert_eq!(result, Err(ReaderError::ParseError("Error".to_string())));
+        assert_eq!(
+            result,
+            Err(ReaderError::FileFormatError("Error".to_string()))
+        );
     }
 
     struct ErrorWriter;
