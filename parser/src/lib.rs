@@ -1,30 +1,128 @@
 pub mod csv;
 pub mod error;
+pub mod txt;
 
 pub use csv::{CsvReader, CsvWriter};
 pub use error::{ReaderError, WriterError};
+pub use txt::{TxtReader, TxtWriter};
 
+use error::ValidationError;
 use std::{fmt::Display, str::FromStr};
 
 use crate::error::ParseError;
 
-#[derive(Debug, PartialEq, Default)]
-pub struct Transaction {
-    pub tx_id: u64,
-    pub tx_type: TxType,
-    pub from_user_id: u64,
-    pub to_user_id: u64,
-    pub amount: u64,
-    pub timestamp: u64,
-    pub status: Status,
-    pub description: String,
+/// Fields of transaction record
+#[derive(Debug, PartialEq, Hash, Eq, Copy, Clone)]
+pub enum FieldName {
+    TxId,
+    TxType,
+    FromUserId,
+    ToUserId,
+    Amount,
+    Timestamp,
+    Status,
+    Description,
+}
+
+impl FromStr for FieldName {
+    type Err = String;
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "TX_ID" => Ok(FieldName::TxId),
+            "TX_TYPE" => Ok(FieldName::TxType),
+            "FROM_USER_ID" => Ok(FieldName::FromUserId),
+            "TO_USER_ID" => Ok(FieldName::ToUserId),
+            "AMOUNT" => Ok(FieldName::Amount),
+            "TIMESTAMP" => Ok(FieldName::Timestamp),
+            "STATUS" => Ok(FieldName::Status),
+            "DESCRIPTION" => Ok(FieldName::Description),
+            _ => Err(format!("Unknown field name: {}", s)),
+        }
+    }
+}
+
+impl Display for FieldName {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(match self {
+            FieldName::TxId => "TX_ID",
+            FieldName::TxType => "TX_TYPE",
+            FieldName::FromUserId => "FROM_USER_ID",
+            FieldName::ToUserId => "TO_USER_ID",
+            FieldName::Amount => "AMOUNT",
+            FieldName::Timestamp => "TIMESTAMP",
+            FieldName::Status => "STATUS",
+            FieldName::Description => "DESCRIPTION",
+        })
+    }
 }
 
 #[derive(Debug, PartialEq, Default)]
+/// Transaction
+pub struct Transaction {
+    /// Transaction ID
+    pub tx_id: u64,
+    /// Transaction type
+    pub tx_type: TxType,
+    /// Id of the user who sent the money
+    pub from_user_id: u64,
+    /// Id of the user who received the money
+    pub to_user_id: u64,
+    /// Amount of money
+    pub amount: u64,
+    /// Timestamp   
+    pub timestamp: u64,
+    /// Status
+    pub status: Status,
+    /// Description
+    pub description: String,
+}
+
+impl Transaction {
+    /// Transaction validation
+    ///
+    /// # Examlpes
+    /// ```
+    /// use parser::{Transaction, TxType};
+    ///
+    /// let tx = Transaction{
+    ///     tx_type: TxType::TRANSFER,
+    ///     from_user_id: 1,
+    ///     to_user_id: 2,
+    ///     ..Default::default()
+    /// };
+    ///
+    /// assert_eq!(tx.validate(), Ok(()));
+    /// ```
+    pub fn validate(&self) -> Result<(), error::ValidationError> {
+        let is_from_user_valid = match self.tx_type {
+            TxType::DEPOSIT => self.from_user_id == 0,
+            _ => self.from_user_id != 0,
+        };
+        if !is_from_user_valid {
+            return Err(ValidationError::BadFromUserId);
+        }
+
+        let is_to_user_valid = match self.tx_type {
+            TxType::WITHDRAWAL => self.to_user_id == 0,
+            _ => self.to_user_id != 0,
+        };
+        if !is_to_user_valid {
+            Err(ValidationError::BadToUserId)
+        } else {
+            Ok(())
+        }
+    }
+}
+
+#[derive(Debug, PartialEq, Default)]
+/// Transaction type
 pub enum TxType {
+    /// Deposit
     DEPOSIT,
     #[default]
+    /// Transfer
     TRANSFER,
+    /// Withdrawal
     WITHDRAWAL,
 }
 
@@ -40,14 +138,13 @@ impl Display for TxType {
 
 impl FromStr for TxType {
     type Err = ParseError;
-
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s {
             "DEPOSIT" => Ok(TxType::DEPOSIT),
             "TRANSFER" => Ok(TxType::TRANSFER),
             "WITHDRAWAL" => Ok(TxType::WITHDRAWAL),
             _ => Err(ParseError {
-                field_name: error::FieldName::TxType,
+                field_name: FieldName::TxType,
                 value: s.to_string(),
             }),
         }
@@ -55,10 +152,14 @@ impl FromStr for TxType {
 }
 
 #[derive(Debug, PartialEq, Default)]
+/// Status
 pub enum Status {
     #[default]
+    /// Success
     SUCCESS,
+    /// Failure
     FAILURE,
+    /// Pending
     PENDING,
 }
 
@@ -81,18 +182,20 @@ impl FromStr for Status {
             "FAILURE" => Ok(Status::FAILURE),
             "PENDING" => Ok(Status::PENDING),
             _ => Err(ParseError {
-                field_name: error::FieldName::Status,
+                field_name: FieldName::Status,
                 value: s.to_string(),
             }),
         }
     }
 }
-
+/// Transaction reader trait
 pub trait TransactionReader {
     #[must_use = "Reading may failed, check the result"]
+    /// Reads one transaction from the reader
     fn read_tx(&mut self) -> Result<Option<Transaction>, ReaderError>;
 
     #[must_use = "Reading may fail, check the result"]
+    /// Reads all transactions from the reader to a vector
     fn read_vector(&mut self) -> Result<Vec<Transaction>, ReaderError> {
         let mut result: Vec<Transaction> = Vec::new();
 
@@ -103,11 +206,15 @@ pub trait TransactionReader {
         Ok(result)
     }
 }
+
+/// Transaction writer trait
 pub trait TransactionWriter {
     #[must_use = "Writing may fail, check the result"]
+    /// Writes one transaction to the writer
     fn write_tx(&mut self, tx: &Transaction) -> Result<(), WriterError>;
 
     #[must_use = "Writing may fail, check the result"]
+    /// Writes all transactions from the vector to the writer
     fn write_vector(&mut self, txs: &[Transaction]) -> Result<(), WriterError> {
         for tx in txs {
             self.write_tx(tx)?;
@@ -118,6 +225,8 @@ pub trait TransactionWriter {
 
 #[cfg(test)]
 mod tests {
+    use crate::error::ValidationError;
+
     use super::*;
     use std::io::{Read, Write};
 
@@ -228,5 +337,148 @@ mod tests {
 
         let result = writer.write_vector(txs);
         assert_eq!(result, Err(WriterError::WriterError("Error".to_string())));
+    }
+
+    #[test]
+    fn test_transaction_validation() -> Result<(), String> {
+        let tx_depostit_from_0 = Transaction {
+            tx_type: TxType::DEPOSIT,
+            from_user_id: 0,
+            to_user_id: 1,
+            ..Default::default()
+        };
+        if !matches!(tx_depostit_from_0.validate(), Ok(())) {
+            return Err("Deposit From 0 shoud be valid".to_string());
+        }
+
+        let tx_depostit_from_1 = Transaction {
+            tx_type: TxType::DEPOSIT,
+            from_user_id: 1,
+            to_user_id: 1,
+            ..Default::default()
+        };
+        if !matches!(
+            tx_depostit_from_1.validate(),
+            Err(ValidationError::BadFromUserId)
+        ) {
+            return Err("Deposit From 1 should return BadFromUserId".to_string());
+        }
+
+        let tx_transfer_from_0 = Transaction {
+            tx_type: TxType::TRANSFER,
+            from_user_id: 0,
+            to_user_id: 1,
+            ..Default::default()
+        };
+        if !matches!(
+            tx_transfer_from_0.validate(),
+            Err(ValidationError::BadFromUserId)
+        ) {
+            return Err("Transfer From 0 shoud return BadFromUserId".to_string());
+        }
+
+        let tx_transfer_from_1 = Transaction {
+            tx_type: TxType::TRANSFER,
+            from_user_id: 1,
+            to_user_id: 1,
+            ..Default::default()
+        };
+        if !matches!(tx_transfer_from_1.validate(), Ok(())) {
+            return Err("Transfer From 1 shoud be valid".to_string());
+        }
+
+        let tx_withdrawal_from_0 = Transaction {
+            tx_type: TxType::WITHDRAWAL,
+            from_user_id: 0,
+            to_user_id: 0,
+            ..Default::default()
+        };
+        if !matches!(
+            tx_withdrawal_from_0.validate(),
+            Err(ValidationError::BadFromUserId)
+        ) {
+            return Err("Withdrawal From 0 shoud return BadFromUserId".to_string());
+        }
+
+        let tx_withdrawal_from_1 = Transaction {
+            tx_type: TxType::WITHDRAWAL,
+            from_user_id: 1,
+            to_user_id: 0,
+            ..Default::default()
+        };
+        if !matches!(tx_withdrawal_from_1.validate(), Ok(())) {
+            return Err("Withdrawal From 1 shoud be valid".to_string());
+        }
+
+        let tx_deposit_to_0 = Transaction {
+            tx_type: TxType::DEPOSIT,
+            from_user_id: 0,
+            to_user_id: 0,
+            ..Default::default()
+        };
+        if !matches!(
+            tx_deposit_to_0.validate(),
+            Err(ValidationError::BadToUserId)
+        ) {
+            return Err("Deposit To 0 shoud return BadToUserId".to_string());
+        }
+
+        let tx_deposit_to_1 = Transaction {
+            tx_type: TxType::DEPOSIT,
+            from_user_id: 0,
+            to_user_id: 1,
+            ..Default::default()
+        };
+        if !matches!(tx_deposit_to_1.validate(), Ok(())) {
+            return Err("Deposit To 1 shoud be valid".to_string());
+        }
+
+        let tx_transfer_to_0 = Transaction {
+            tx_type: TxType::TRANSFER,
+            from_user_id: 1,
+            to_user_id: 0,
+            ..Default::default()
+        };
+        if !matches!(
+            tx_transfer_to_0.validate(),
+            Err(ValidationError::BadToUserId)
+        ) {
+            return Err("Transfer To 0 shoud return BadToUserId".to_string());
+        }
+
+        let tx_transfer_to_1 = Transaction {
+            tx_type: TxType::TRANSFER,
+            from_user_id: 1,
+            to_user_id: 1,
+            ..Default::default()
+        };
+        if !matches!(tx_transfer_to_1.validate(), Ok(())) {
+            return Err("Transfer To 1 shoud be valid".to_string());
+        }
+
+        let tx_withdrawal_to_0 = Transaction {
+            tx_type: TxType::WITHDRAWAL,
+            from_user_id: 1,
+            to_user_id: 0,
+            ..Default::default()
+        };
+        if !matches!(tx_withdrawal_to_0.validate(), Ok(())) {
+            return Err("Withdrawal To 0 shoud be valid".to_string());
+        }
+
+        let tx_withdrawal_to_1 = Transaction {
+            tx_type: TxType::WITHDRAWAL,
+            from_user_id: 1,
+            to_user_id: 1,
+            ..Default::default()
+        };
+        if !matches!(
+            tx_withdrawal_to_1.validate(),
+            Err(ValidationError::BadToUserId)
+        ) {
+            return Err("Withdrawal To 1 shoud return BadToUserId".to_string());
+        }
+
+        Ok(())
     }
 }
