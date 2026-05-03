@@ -190,7 +190,7 @@ pub struct TxtWriter<W: Write> {
 
 impl<W: Write> TxtWriter<W> {
     /// Creates a new TxtWriter instance.
-    /// 
+    ///
     /// # Examples
     /// ```
     /// use std::io::Cursor;
@@ -206,7 +206,7 @@ impl<W: Write> TxtWriter<W> {
     ///        timestamp: 1633036800000,
     ///        status: Status::SUCCESS,
     ///        description: "Terminal deposit".to_string(),
-    ///     }, 
+    ///     },
     ///     Transaction {
     ///        tx_id: 2312321321321321,
     ///        tx_type: TxType::TRANSFER,
@@ -228,13 +228,13 @@ impl<W: Write> TxtWriter<W> {
     ///       description: "User withdrawal".to_string(),
     ///   }
     /// ];
-    /// 
-    /// let mut data: Vec<u8> = Vec::new(); 
+    ///
+    /// let mut data: Vec<u8> = Vec::new();
     /// {
     ///     let mut writer = TxtWriter::new(&mut data);
     ///     writer.write_vector(&transactions).unwrap();
     /// }
-    /// 
+    ///
     /// let expected_txt_data = "TX_ID: 1234567890123456
     ///TX_TYPE: DEPOSIT
     ///FROM_USER_ID: 0
@@ -343,7 +343,7 @@ FROM_USER_ID: 9876543210987654
 TO_USER_ID: 0
 AMOUNT: 100
 TIMESTAMP: 1633066800000
-STATUS: SUCCESS
+STATUS: PENDING
 DESCRIPTION: "User withdrawal"
 "#;
 
@@ -381,7 +381,7 @@ DESCRIPTION: "User withdrawal"
             to_user_id: 0,
             amount: 100,
             timestamp: 1633066800000,
-            status: Status::SUCCESS,
+            status: Status::PENDING,
             description: "User withdrawal".to_string(),
         }
     }
@@ -687,7 +687,7 @@ FROM_USER_ID: 9876543210987654
 TO_USER_ID: 0
 #Comment 6
 TIMESTAMP: 1633066800000
-STATUS: SUCCESS
+STATUS: PENDING
 DESCRIPTION: "User withdrawal"
 "#,
         );

@@ -1,3 +1,4 @@
+pub mod bin;
 pub mod csv;
 pub mod error;
 pub mod txt;
@@ -5,6 +6,7 @@ pub mod txt;
 pub use csv::{CsvReader, CsvWriter};
 pub use error::{ReaderError, WriterError};
 pub use txt::{TxtReader, TxtWriter};
+pub use bin::{BinReader};
 
 use error::ValidationError;
 use std::{fmt::Display, str::FromStr};
@@ -80,7 +82,7 @@ pub struct Transaction {
 impl Transaction {
     /// Transaction validation
     ///
-    /// # Examlpes
+    /// # Examples
     /// ```
     /// use parser::{Transaction, TxType};
     ///
@@ -118,12 +120,12 @@ impl Transaction {
 /// Transaction type
 pub enum TxType {
     /// Deposit
-    DEPOSIT,
+    DEPOSIT = 0,
     #[default]
     /// Transfer
-    TRANSFER,
+    TRANSFER = 1,
     /// Withdrawal
-    WITHDRAWAL,
+    WITHDRAWAL = 2,
 }
 
 impl Display for TxType {
@@ -151,16 +153,32 @@ impl FromStr for TxType {
     }
 }
 
+impl TryFrom<u8> for TxType {
+    type Error = ParseError;
+
+    fn try_from(value: u8) -> Result<Self, Self::Error> {
+        match value {
+            0 => Ok(TxType::DEPOSIT),
+            1 => Ok(TxType::TRANSFER),
+            2 => Ok(TxType::WITHDRAWAL),
+            _ => Err(ParseError {
+                field_name: FieldName::TxType,
+                value: value.to_string(),
+            }),
+        }
+    }
+}
+
 #[derive(Debug, PartialEq, Default)]
 /// Status
 pub enum Status {
     #[default]
     /// Success
-    SUCCESS,
+    SUCCESS = 0,
     /// Failure
-    FAILURE,
+    FAILURE = 1,
     /// Pending
-    PENDING,
+    PENDING = 2,
 }
 
 impl Display for Status {
@@ -184,6 +202,22 @@ impl FromStr for Status {
             _ => Err(ParseError {
                 field_name: FieldName::Status,
                 value: s.to_string(),
+            }),
+        }
+    }
+}
+
+impl TryFrom<u8> for Status {
+    type Error = ParseError;
+
+    fn try_from(value: u8) -> Result<Self, Self::Error> {
+        match value {
+            0 => Ok(Status::SUCCESS),
+            1 => Ok(Status::FAILURE),
+            2 => Ok(Status::PENDING),
+            _ => Err(ParseError {
+                field_name: FieldName::Status,
+                value: value.to_string(),
             }),
         }
     }

@@ -1,4 +1,7 @@
-use std::{io::{Read, Write}, str::FromStr};
+use std::{
+    io::{Read, Write},
+    str::FromStr,
+};
 
 use csv::StringRecord;
 
@@ -95,8 +98,12 @@ impl<R: Read> CsvReader<R> {
     }
 
     fn parse<T: FromStr>(&self, s: &str, field_name: FieldName) -> Result<T, ReaderError> {
-        s.parse::<T>()
-            .map_err(|_| ReaderError::FieldParseError(ParseError { field_name, value: s.to_string() }))
+        s.parse::<T>().map_err(|_| {
+            ReaderError::FieldParseError(ParseError {
+                field_name,
+                value: s.to_string(),
+            })
+        })
     }
 }
 
