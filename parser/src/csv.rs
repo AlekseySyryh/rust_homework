@@ -328,14 +328,17 @@ mod tests {
     }
 
     #[test]
-    fn test_read_csv_wrong_header() -> Result<(), String> {
+    fn test_read_csv_wrong_header() {
         let csv_data = "Invalid CSV header";
         let cursor = Cursor::new(csv_data.to_string());
         let wrong_header = CsvReader::try_new(cursor);
 
-        match wrong_header {
-            Err(_) => Ok(()),
-            Ok(_) => Err("Should return an error".to_string()),
+        if let Err(ReaderError::FileFormatError(_)) = wrong_header {
+
+        }
+        else
+        {
+            panic!("Should return an error");
         }
     }
 
@@ -360,53 +363,53 @@ WRONG,DEPOSIT,0,501,50000,1672531200000,SUCCESS,"Initial account funding"
                 field_name: FieldName::TxId,
                 ..
             }))
-        ));
+        ), "Parse wrong TxId shoud return error");
         assert!(matches!(
             reader.read_tx(),
             Err(ReaderError::FieldParseError(ParseError {
                 field_name: FieldName::TxType,
                 ..
             }))
-        ));
+        ), "Parse wrong TxType shoud return error");
         assert!(matches!(
             reader.read_tx(),
             Err(ReaderError::FieldParseError(ParseError {
                 field_name: FieldName::FromUserId,
                 ..
             }))
-        ));
+        ), "Parse wrong FromUserId shoud return error");
         assert!(matches!(
             reader.read_tx(),
             Err(ReaderError::FieldParseError(ParseError {
                 field_name: FieldName::ToUserId,
                 ..
             }))
-        ));
+        ), "Parse wrong ToUserId shoud return error");
         assert!(matches!(
             reader.read_tx(),
             Err(ReaderError::FieldParseError(ParseError {
                 field_name: FieldName::Amount,
                 ..
             }))
-        ));
+        ), "Parse wrong Amount shoud return error");
         assert!(matches!(
             reader.read_tx(),
             Err(ReaderError::FieldParseError(ParseError {
                 field_name: FieldName::Timestamp,
                 ..
             }))
-        ));
+        ), "Parse wrong Timestamp shoud return error");
         assert!(matches!(
             reader.read_tx(),
             Err(ReaderError::FieldParseError(ParseError {
                 field_name: FieldName::Status,
                 ..
             }))
-        ));
+        ), "Parse wrong Status shoud return error");
     }
 
     #[test]
-    fn test_read_csv_error() -> Result<(), String> {
+    fn test_read_csv_error() {
         let csv_data = r#"TX_ID,TX_TYPE,FROM_USER_ID,TO_USER_ID,AMOUNT,TIMESTAMP,STATUS,DESCRIPTION
 WRONG,DEPOSIT,0,501,50000,1672531200000,SUCCESS"#;
 
@@ -416,14 +419,13 @@ WRONG,DEPOSIT,0,501,50000,1672531200000,SUCCESS"#;
         let result = reader.read_tx();
 
         if let Err(ReaderError::RecordFormatError(_)) = result {
-            Ok(())
         } else {
-            Err("Should return RecordFromat".to_string())
+            panic!("Should return RecordFromat");
         }
     }
 
     #[test]
-    fn test_read_csv_validates_transactions() -> Result<(), String> {
+    fn test_read_csv_validates_transactions() {
         let csv_data = r#"TX_ID,TX_TYPE,FROM_USER_ID,TO_USER_ID,AMOUNT,TIMESTAMP,STATUS,DESCRIPTION
 1001,DEPOSIT,0,0,50000,1672531200000,SUCCESS,"Initial account funding"
 1001,DEPOSIT,0,501,50000,1672531200000,SUCCESS,"Initial account funding"
@@ -447,15 +449,15 @@ WRONG,DEPOSIT,0,501,50000,1672531200000,SUCCESS"#;
                 ValidationError::BadToUserId
             ))
         ) {
-            return Err("Deposit 0 0 should return BadToUserId".to_string());
+            panic!("Deposit 0 0 should return BadToUserId");
         }
 
         if !matches!(reader.read_tx(), Ok(_)) {
-            return Err("Deposit 0 501 should be valid".to_string());
+            panic!("Deposit 0 501 should be valid");
         }
 
         if !matches!(reader.read_tx(), Err(ReaderError::RecordValidationError(_))) {
-            return Err("Deposit 500 0 should return BadFromUserId or BadToUserId".to_string());
+            panic!("Deposit 500 0 should return BadFromUserId or BadToUserId");
         }
 
         if !matches!(
@@ -464,11 +466,11 @@ WRONG,DEPOSIT,0,501,50000,1672531200000,SUCCESS"#;
                 ValidationError::BadFromUserId
             ))
         ) {
-            return Err("Deposit 500 501 should return BadFromUserId".to_string());
+            panic!("Deposit 500 501 should return BadFromUserId");
         }
 
         if !matches!(reader.read_tx(), Err(ReaderError::RecordValidationError(_))) {
-            return Err("Transfer 0 0 should return BadFromUserId or BadToUserId".to_string());
+            panic!("Transfer 0 0 should return BadFromUserId or BadToUserId");
         }
 
         if !matches!(
@@ -477,7 +479,7 @@ WRONG,DEPOSIT,0,501,50000,1672531200000,SUCCESS"#;
                 ValidationError::BadFromUserId
             ))
         ) {
-            return Err("Transfer 0 501 should return BadFromUserId".to_string());
+            panic!("Transfer 0 501 should return BadFromUserId");
         }
 
         if !matches!(
@@ -486,11 +488,11 @@ WRONG,DEPOSIT,0,501,50000,1672531200000,SUCCESS"#;
                 ValidationError::BadToUserId
             ))
         ) {
-            return Err("Transfer 500 0 should return BadToUserId".to_string());
+            panic!("Transfer 500 0 should return BadToUserId");
         }
 
         if !matches!(reader.read_tx(), Ok(_)) {
-            return Err("Transfer 500 501 should be valid".to_string());
+            panic!("Transfer 500 501 should be valid");
         }
 
         if !matches!(
@@ -499,15 +501,15 @@ WRONG,DEPOSIT,0,501,50000,1672531200000,SUCCESS"#;
                 ValidationError::BadFromUserId
             ))
         ) {
-            return Err("Withdrawal 0 0 should return BadFromUserId".to_string());
+            panic!("Withdrawal 0 0 should return BadFromUserId");
         }
 
         if !matches!(reader.read_tx(), Err(ReaderError::RecordValidationError(_))) {
-            return Err("Withdrawal 0 501 should return BadFromUserId or BadToUserId".to_string());
+            panic!("Withdrawal 0 501 should return BadFromUserId or BadToUserId");
         }
 
         if !matches!(reader.read_tx(), Ok(_)) {
-            return Err("Withdrawal 500 0 should be valid".to_string());
+            panic!("Withdrawal 500 0 should be valid");
         }
 
         if !matches!(
@@ -516,10 +518,8 @@ WRONG,DEPOSIT,0,501,50000,1672531200000,SUCCESS"#;
                 ValidationError::BadToUserId
             ))
         ) {
-            return Err("Withdrawal 500 501 should return BadToUserId".to_string());
+            panic!("Withdrawal 500 501 should return BadToUserId");
         }
-
-        Ok(())
     }
 
     #[test]
@@ -544,7 +544,7 @@ WRONG,DEPOSIT,0,501,50000,1672531200000,SUCCESS"#;
     }
 
     #[test]
-    fn test_write_csv_validates_transactions() -> Result<(), String> {
+    fn test_write_csv_validates_transactions() {
         let test_cases = vec![
             (
                 Transaction {
@@ -687,10 +687,8 @@ WRONG,DEPOSIT,0,501,50000,1672531200000,SUCCESS"#;
                     }
                 }
             } {
-                return Err(error);
+                panic!("{error}");
             }
         }
-
-        Ok(())
     }
 }

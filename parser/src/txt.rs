@@ -392,14 +392,14 @@ DESCRIPTION: "User withdrawal"
 
         let mut reader = TxtReader::new(cursor);
 
-        assert_eq!(reader.read_tx(), Ok(Some(tx1())));
-        assert_eq!(reader.read_tx(), Ok(Some(tx2())));
-        assert_eq!(reader.read_tx(), Ok(Some(tx3())));
-        assert_eq!(reader.read_tx(), Ok(None));
+        assert_eq!(reader.read_tx(), Ok(Some(tx1())), "TX1 Reading error");
+        assert_eq!(reader.read_tx(), Ok(Some(tx2())), "TX2 Reading error");
+        assert_eq!(reader.read_tx(), Ok(Some(tx3())), "TX3 Reading error");
+        assert_eq!(reader.read_tx(), Ok(None), "EOF Reading error");
     }
 
     #[test]
-    fn test_read_text_missing_key_are_error() -> Result<(), String> {
+    fn test_read_text_missing_key_are_error() {
         let cursor = Cursor::new(
             r#"TX_TYPE: DEPOSIT
 FROM_USER_ID: 0
@@ -472,14 +472,14 @@ STATUS: SUCCESS
 
         loop {
             match reader.read_tx() {
-                Ok(Some(_)) => return Err("Should be error".to_string()),
-                Ok(None) => return Ok(()),
+                Ok(Some(_)) => panic!("Should be error"),
+                Ok(None) => break,
                 Err(e) => match e {
                     ReaderError::RecordFormatError(_) => {
                         continue;
                     }
                     _ => {
-                        return Err("Should be RecordFormatError".to_string());
+                        panic!("Should be RecordFormatError");
                     }
                 },
             }
@@ -503,10 +503,10 @@ DESCRIPTION: "Terminal deposit""#
 
         let mut reader = TxtReader::new(cursor);
 
-        assert!(matches!(
-            reader.read_tx(),
-            Err(ReaderError::RecordFormatError(_))
-        ));
+        assert!(
+            matches!(reader.read_tx(), Err(ReaderError::RecordFormatError(_))),
+            "Should return RecordFormatError"
+        );
     }
 
     #[test]
@@ -529,7 +529,7 @@ DESCRIPTION: "Terminal deposit""#
         assert!(matches!(
             reader.read_tx(),
             Err(ReaderError::RecordFormatError(_))
-        ));
+        ), "Should return RecordFormatError");
     }
 
     #[test]
@@ -609,49 +609,49 @@ DESCRIPTION: "Terminal deposit"
                 field_name: FieldName::TxId,
                 value: _
             }))
-        ));
+        ), "Parse wrong TxId shoud return error");
         assert!(matches!(
             reader.read_tx(),
             Err(ReaderError::FieldParseError(ParseError {
                 field_name: FieldName::TxType,
                 value: _
             }))
-        ));
+        ), "Parse wrong TxType shoud return error");
         assert!(matches!(
             reader.read_tx(),
             Err(ReaderError::FieldParseError(ParseError {
                 field_name: FieldName::FromUserId,
                 value: _
             }))
-        ));
+        ), "Parse wrong FromUserId shoud return error");
         assert!(matches!(
             reader.read_tx(),
             Err(ReaderError::FieldParseError(ParseError {
                 field_name: FieldName::ToUserId,
                 value: _
             }))
-        ));
+        ), "Parse wrong ToUserId shoud return error");
         assert!(matches!(
             reader.read_tx(),
             Err(ReaderError::FieldParseError(ParseError {
                 field_name: FieldName::Amount,
                 value: _
             }))
-        ));
+        ), "Parse wrong Amount shoud return error");
         assert!(matches!(
             reader.read_tx(),
             Err(ReaderError::FieldParseError(ParseError {
                 field_name: FieldName::Timestamp,
                 value: _
             }))
-        ));
+        ), "Parse wrong Timestamp shoud return error");
         assert!(matches!(
             reader.read_tx(),
             Err(ReaderError::FieldParseError(ParseError {
                 field_name: FieldName::Status,
                 value: _
             }))
-        ));
+        ), "Parse wrong Status shoud return error");
     }
 
     #[test]
@@ -701,7 +701,7 @@ DESCRIPTION: "User withdrawal"
     }
 
     #[test]
-    fn test_read_text_validates_transactions() -> Result<(), String> {
+    fn test_read_text_validates_transactions() {
         let cursor = Cursor::new(
             r#"TX_ID: 1234567890123456
 TX_TYPE: DEPOSIT
@@ -821,13 +821,13 @@ DESCRIPTION: "Desc"
                 ValidationError::BadToUserId
             ))
         ) {
-            return Err("Deposit 0 0 shoud have BadToUserId".to_string());
+            panic!("Deposit 0 0 shoud have BadToUserId");
         }
         if !matches!(reader.read_tx(), Ok(_)) {
-            return Err("Deposit 0 100 should be valid".to_string());
+            panic!("Deposit 0 100 should be valid");
         }
         if !matches!(reader.read_tx(), Err(ReaderError::RecordValidationError(_))) {
-            return Err("Deposit 100 0 should have BadToUserId or BadFromUserId".to_string());
+            panic!("Deposit 100 0 should have BadToUserId or BadFromUserId");
         }
         if !matches!(
             reader.read_tx(),
@@ -835,10 +835,10 @@ DESCRIPTION: "Desc"
                 ValidationError::BadFromUserId
             ))
         ) {
-            return Err("Deposit 100 200 should have BadFromUserId".to_string());
+            panic!("Deposit 100 200 should have BadFromUserId");
         }
         if !matches!(reader.read_tx(), Err(ReaderError::RecordValidationError(_))) {
-            return Err("Transfer 0 0 should have BadToUserId or BadFromUserId".to_string());
+            panic!("Transfer 0 0 should have BadToUserId or BadFromUserId");
         }
         if !matches!(
             reader.read_tx(),
@@ -846,7 +846,7 @@ DESCRIPTION: "Desc"
                 ValidationError::BadFromUserId
             ))
         ) {
-            return Err("Transfer 0 100 should have BadFromUserId".to_string());
+            panic!("Transfer 0 100 should have BadFromUserId");
         }
         if !matches!(
             reader.read_tx(),
@@ -854,10 +854,10 @@ DESCRIPTION: "Desc"
                 ValidationError::BadToUserId
             ))
         ) {
-            return Err("Transfer 100 0 should have BadToUserId".to_string());
+            panic!("Transfer 100 0 should have BadToUserId");
         }
         if !matches!(reader.read_tx(), Ok(_)) {
-            return Err("Transfer 100 200 should be valid".to_string());
+            panic!("Transfer 100 200 should be valid");
         }
         if !matches!(
             reader.read_tx(),
@@ -865,13 +865,13 @@ DESCRIPTION: "Desc"
                 ValidationError::BadFromUserId
             ))
         ) {
-            return Err("Withdrawal 0 0 should have BadFromUserId".to_string());
+            panic!("Withdrawal 0 0 should have BadFromUserId");
         }
         if !matches!(reader.read_tx(), Err(ReaderError::RecordValidationError(_))) {
-            return Err("Withdrawal 0 100 should have BadFromUserId or BadToUserId".to_string());
+            panic!("Withdrawal 0 100 should have BadFromUserId or BadToUserId");
         }
         if !matches!(reader.read_tx(), Ok(_)) {
-            return Err("Withdrawal 100 0 should be valid".to_string());
+            panic!("Withdrawal 100 0 should be valid");
         }
         if !matches!(
             reader.read_tx(),
@@ -879,10 +879,8 @@ DESCRIPTION: "Desc"
                 ValidationError::BadToUserId
             ))
         ) {
-            return Err("Withdrawal 100 200 should have BadToUserId".to_string());
+            panic!("Withdrawal 100 200 should have BadToUserId");
         }
-
-        Ok(())
     }
 
     #[test]
@@ -906,7 +904,7 @@ DESCRIPTION: "Desc"
     }
 
     #[test]
-    fn test_write_txt_validates_transactions() -> Result<(), String> {
+    fn test_write_txt_validates_transactions() {
         let test_cases = vec![
             (
                 Transaction {
@@ -1049,10 +1047,8 @@ DESCRIPTION: "Desc"
                     }
                 }
             } {
-                return Err(error);
+                panic!("{error}");
             }
         }
-
-        Ok(())
     }
 }

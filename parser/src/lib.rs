@@ -3,10 +3,10 @@ pub mod csv;
 pub mod error;
 pub mod txt;
 
+pub use bin::{BinReader, BinWriter};
 pub use csv::{CsvReader, CsvWriter};
 pub use error::{ReaderError, WriterError};
 pub use txt::{TxtReader, TxtWriter};
-pub use bin::{BinReader};
 
 use error::ValidationError;
 use std::{fmt::Display, str::FromStr};
@@ -116,7 +116,7 @@ impl Transaction {
     }
 }
 
-#[derive(Debug, PartialEq, Default)]
+#[derive(Debug, PartialEq, Default, Copy, Clone)]
 /// Transaction type
 pub enum TxType {
     /// Deposit
@@ -169,7 +169,7 @@ impl TryFrom<u8> for TxType {
     }
 }
 
-#[derive(Debug, PartialEq, Default)]
+#[derive(Debug, PartialEq, Default, Copy, Clone)]
 /// Status
 pub enum Status {
     #[default]
@@ -374,7 +374,7 @@ mod tests {
     }
 
     #[test]
-    fn test_transaction_validation() -> Result<(), String> {
+    fn test_transaction_validation() {
         let tx_depostit_from_0 = Transaction {
             tx_type: TxType::DEPOSIT,
             from_user_id: 0,
@@ -382,7 +382,7 @@ mod tests {
             ..Default::default()
         };
         if !matches!(tx_depostit_from_0.validate(), Ok(())) {
-            return Err("Deposit From 0 shoud be valid".to_string());
+            panic!("Deposit From 0 shoud be valid");
         }
 
         let tx_depostit_from_1 = Transaction {
@@ -395,7 +395,7 @@ mod tests {
             tx_depostit_from_1.validate(),
             Err(ValidationError::BadFromUserId)
         ) {
-            return Err("Deposit From 1 should return BadFromUserId".to_string());
+            panic!("Deposit From 1 should return BadFromUserId");
         }
 
         let tx_transfer_from_0 = Transaction {
@@ -408,7 +408,7 @@ mod tests {
             tx_transfer_from_0.validate(),
             Err(ValidationError::BadFromUserId)
         ) {
-            return Err("Transfer From 0 shoud return BadFromUserId".to_string());
+            panic!("Transfer From 0 shoud return BadFromUserId");
         }
 
         let tx_transfer_from_1 = Transaction {
@@ -418,7 +418,7 @@ mod tests {
             ..Default::default()
         };
         if !matches!(tx_transfer_from_1.validate(), Ok(())) {
-            return Err("Transfer From 1 shoud be valid".to_string());
+            panic!("Transfer From 1 shoud be valid");
         }
 
         let tx_withdrawal_from_0 = Transaction {
@@ -431,7 +431,7 @@ mod tests {
             tx_withdrawal_from_0.validate(),
             Err(ValidationError::BadFromUserId)
         ) {
-            return Err("Withdrawal From 0 shoud return BadFromUserId".to_string());
+            panic!("Withdrawal From 0 shoud return BadFromUserId");
         }
 
         let tx_withdrawal_from_1 = Transaction {
@@ -441,7 +441,7 @@ mod tests {
             ..Default::default()
         };
         if !matches!(tx_withdrawal_from_1.validate(), Ok(())) {
-            return Err("Withdrawal From 1 shoud be valid".to_string());
+            panic!("Withdrawal From 1 shoud be valid");
         }
 
         let tx_deposit_to_0 = Transaction {
@@ -454,7 +454,7 @@ mod tests {
             tx_deposit_to_0.validate(),
             Err(ValidationError::BadToUserId)
         ) {
-            return Err("Deposit To 0 shoud return BadToUserId".to_string());
+            panic!("Deposit To 0 shoud return BadToUserId");
         }
 
         let tx_deposit_to_1 = Transaction {
@@ -464,7 +464,7 @@ mod tests {
             ..Default::default()
         };
         if !matches!(tx_deposit_to_1.validate(), Ok(())) {
-            return Err("Deposit To 1 shoud be valid".to_string());
+            panic!("Deposit To 1 shoud be valid");
         }
 
         let tx_transfer_to_0 = Transaction {
@@ -477,7 +477,7 @@ mod tests {
             tx_transfer_to_0.validate(),
             Err(ValidationError::BadToUserId)
         ) {
-            return Err("Transfer To 0 shoud return BadToUserId".to_string());
+            panic!("Transfer To 0 shoud return BadToUserId");
         }
 
         let tx_transfer_to_1 = Transaction {
@@ -487,7 +487,7 @@ mod tests {
             ..Default::default()
         };
         if !matches!(tx_transfer_to_1.validate(), Ok(())) {
-            return Err("Transfer To 1 shoud be valid".to_string());
+            panic!("Transfer To 1 shoud be valid");
         }
 
         let tx_withdrawal_to_0 = Transaction {
@@ -497,7 +497,7 @@ mod tests {
             ..Default::default()
         };
         if !matches!(tx_withdrawal_to_0.validate(), Ok(())) {
-            return Err("Withdrawal To 0 shoud be valid".to_string());
+            panic!("Withdrawal To 0 shoud be valid");
         }
 
         let tx_withdrawal_to_1 = Transaction {
@@ -510,9 +510,7 @@ mod tests {
             tx_withdrawal_to_1.validate(),
             Err(ValidationError::BadToUserId)
         ) {
-            return Err("Withdrawal To 1 shoud return BadToUserId".to_string());
+            panic!("Withdrawal To 1 shoud return BadToUserId");
         }
-
-        Ok(())
     }
 }
