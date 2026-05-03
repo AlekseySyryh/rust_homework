@@ -1,14 +1,15 @@
-pub mod bin;
-pub mod csv;
-pub mod error;
-pub mod txt;
+mod bin;
+mod csv;
+mod error;
+mod factory;
+mod txt;
 
 pub use bin::{BinReader, BinWriter};
 pub use csv::{CsvReader, CsvWriter};
-pub use error::{ReaderError, WriterError};
+pub use error::{ReaderError, WriterError, ValidationError};
 pub use txt::{TxtReader, TxtWriter};
+pub use factory::{Format, TransactionReaderFactory, TransactionWriterFactory};
 
-use error::ValidationError;
 use std::{fmt::Display, str::FromStr};
 
 use crate::error::ParseError;

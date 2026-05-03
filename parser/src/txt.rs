@@ -526,10 +526,10 @@ DESCRIPTION: "Terminal deposit""#
 
         let mut reader = TxtReader::new(cursor);
 
-        assert!(matches!(
-            reader.read_tx(),
-            Err(ReaderError::RecordFormatError(_))
-        ), "Should return RecordFormatError");
+        assert!(
+            matches!(reader.read_tx(), Err(ReaderError::RecordFormatError(_))),
+            "Should return RecordFormatError"
+        );
     }
 
     #[test]
@@ -603,55 +603,76 @@ DESCRIPTION: "Terminal deposit"
 
         let mut reader = TxtReader::new(cursor);
 
-        assert!(matches!(
-            reader.read_tx(),
-            Err(ReaderError::FieldParseError(ParseError {
-                field_name: FieldName::TxId,
-                value: _
-            }))
-        ), "Parse wrong TxId shoud return error");
-        assert!(matches!(
-            reader.read_tx(),
-            Err(ReaderError::FieldParseError(ParseError {
-                field_name: FieldName::TxType,
-                value: _
-            }))
-        ), "Parse wrong TxType shoud return error");
-        assert!(matches!(
-            reader.read_tx(),
-            Err(ReaderError::FieldParseError(ParseError {
-                field_name: FieldName::FromUserId,
-                value: _
-            }))
-        ), "Parse wrong FromUserId shoud return error");
-        assert!(matches!(
-            reader.read_tx(),
-            Err(ReaderError::FieldParseError(ParseError {
-                field_name: FieldName::ToUserId,
-                value: _
-            }))
-        ), "Parse wrong ToUserId shoud return error");
-        assert!(matches!(
-            reader.read_tx(),
-            Err(ReaderError::FieldParseError(ParseError {
-                field_name: FieldName::Amount,
-                value: _
-            }))
-        ), "Parse wrong Amount shoud return error");
-        assert!(matches!(
-            reader.read_tx(),
-            Err(ReaderError::FieldParseError(ParseError {
-                field_name: FieldName::Timestamp,
-                value: _
-            }))
-        ), "Parse wrong Timestamp shoud return error");
-        assert!(matches!(
-            reader.read_tx(),
-            Err(ReaderError::FieldParseError(ParseError {
-                field_name: FieldName::Status,
-                value: _
-            }))
-        ), "Parse wrong Status shoud return error");
+        assert!(
+            matches!(
+                reader.read_tx(),
+                Err(ReaderError::FieldParseError(ParseError {
+                    field_name: FieldName::TxId,
+                    value: _
+                }))
+            ),
+            "Parse wrong TxId shoud return error"
+        );
+        assert!(
+            matches!(
+                reader.read_tx(),
+                Err(ReaderError::FieldParseError(ParseError {
+                    field_name: FieldName::TxType,
+                    value: _
+                }))
+            ),
+            "Parse wrong TxType shoud return error"
+        );
+        assert!(
+            matches!(
+                reader.read_tx(),
+                Err(ReaderError::FieldParseError(ParseError {
+                    field_name: FieldName::FromUserId,
+                    value: _
+                }))
+            ),
+            "Parse wrong FromUserId shoud return error"
+        );
+        assert!(
+            matches!(
+                reader.read_tx(),
+                Err(ReaderError::FieldParseError(ParseError {
+                    field_name: FieldName::ToUserId,
+                    value: _
+                }))
+            ),
+            "Parse wrong ToUserId shoud return error"
+        );
+        assert!(
+            matches!(
+                reader.read_tx(),
+                Err(ReaderError::FieldParseError(ParseError {
+                    field_name: FieldName::Amount,
+                    value: _
+                }))
+            ),
+            "Parse wrong Amount shoud return error"
+        );
+        assert!(
+            matches!(
+                reader.read_tx(),
+                Err(ReaderError::FieldParseError(ParseError {
+                    field_name: FieldName::Timestamp,
+                    value: _
+                }))
+            ),
+            "Parse wrong Timestamp shoud return error"
+        );
+        assert!(
+            matches!(
+                reader.read_tx(),
+                Err(ReaderError::FieldParseError(ParseError {
+                    field_name: FieldName::Status,
+                    value: _
+                }))
+            ),
+            "Parse wrong Status shoud return error"
+        );
     }
 
     #[test]
