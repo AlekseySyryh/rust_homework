@@ -9,6 +9,9 @@ use crate::{
     TxtWriter,
 };
 
+use clap::ValueEnum;
+
+#[derive(Clone, ValueEnum)]
 /// Format of transactions file
 pub enum Format {
     /// Binary

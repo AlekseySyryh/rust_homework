@@ -6,7 +6,7 @@ mod txt;
 
 pub use bin::{BinReader, BinWriter};
 pub use csv::{CsvReader, CsvWriter};
-pub use error::{ReaderError, WriterError, ValidationError};
+pub use error::{ReaderError, WriterError, ValidationError, ParserError};
 pub use txt::{TxtReader, TxtWriter};
 pub use factory::{Format, TransactionReaderFactory, TransactionWriterFactory};
 

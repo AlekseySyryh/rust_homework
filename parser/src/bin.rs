@@ -1,4 +1,4 @@
-use std::io::{BufReader, IoSlice, IoSliceMut, Read, Write};
+use std::{io::{BufReader, IoSlice, Read, Write}};
 
 use crate::{
     ReaderError, Status, Transaction, TransactionReader, TransactionWriter, TxType, WriterError,
@@ -124,29 +124,28 @@ impl<R: Read> TransactionReader for BinReader<R> {
         let mut status_buf = [0u8; 1];
         let mut desc_len_buf = [0u8; 4];
 
-        let mut bufs = [
-            IoSliceMut::new(&mut len_buf),
-            IoSliceMut::new(&mut tx_id_buf),
-            IoSliceMut::new(&mut tx_type_buf),
-            IoSliceMut::new(&mut from_user_id_buf),
-            IoSliceMut::new(&mut to_user_id_buf),
-            IoSliceMut::new(&mut amount_buf),
-            IoSliceMut::new(&mut timestamp_buf),
-            IoSliceMut::new(&mut status_buf),
-            IoSliceMut::new(&mut desc_len_buf),
+        let mut bufs  = [
+            &mut len_buf[..],
+            &mut tx_id_buf[..],
+            &mut tx_type_buf[..],
+            &mut from_user_id_buf[..],
+            &mut to_user_id_buf[..],
+            &mut amount_buf[..],
+            &mut timestamp_buf[..],
+            &mut status_buf[..],
+            &mut desc_len_buf[..],
         ];
 
-        self.reader
-            .read_vectored(&mut bufs)
-            .map_err(|e| ReaderError::FileFormatError(format!("Read error {:?}", e)))?;
-
+        for buf in bufs.iter_mut() {
+            self.reader.read_exact(buf).map_err(|e| ReaderError::FileFormatError(format!("{e:}")))?;
+        }
+        
         let len = u32::from_be_bytes(len_buf);
         let desc_len: u32 = u32::from_be_bytes(desc_len_buf);
 
         if len != 46 + desc_len {
             return Err(ReaderError::RecordFormatError(
-                "Invalid record length".to_string(),
-            ));
+                format!("Invalid record length. Len = {len}, Desc_len = {desc_len}")));
         }
 
         let mut desc_buf = vec![0u8; desc_len as usize];

@@ -39,3 +39,12 @@ pub enum WriterError {
     /// Record validation error
     RecordValidationError(ValidationError),
 }
+
+#[derive(Debug)]
+/// Parser error
+pub enum ParserError {
+    /// Reader error
+    ReaderError(ReaderError),
+    /// Writer error
+    WriterError(WriterError),
+}
