@@ -1,4 +1,4 @@
-use std::{io::{BufReader, IoSlice, Read, Write}};
+use std::io::{BufReader, IoSlice, Read, Write};
 
 use crate::{
     ReaderError, Status, Transaction, TransactionReader, TransactionWriter, TxType, WriterError,
@@ -124,7 +124,7 @@ impl<R: Read> TransactionReader for BinReader<R> {
         let mut status_buf = [0u8; 1];
         let mut desc_len_buf = [0u8; 4];
 
-        let mut bufs  = [
+        let mut bufs = [
             &mut len_buf[..],
             &mut tx_id_buf[..],
             &mut tx_type_buf[..],
@@ -137,15 +137,18 @@ impl<R: Read> TransactionReader for BinReader<R> {
         ];
 
         for buf in bufs.iter_mut() {
-            self.reader.read_exact(buf).map_err(|e| ReaderError::FileFormatError(format!("{e:}")))?;
+            self.reader
+                .read_exact(buf)
+                .map_err(|e| ReaderError::FileFormatError(format!("{e:}")))?;
         }
-        
+
         let len = u32::from_be_bytes(len_buf);
         let desc_len: u32 = u32::from_be_bytes(desc_len_buf);
 
         if len != 46 + desc_len {
-            return Err(ReaderError::RecordFormatError(
-                format!("Invalid record length. Len = {len}, Desc_len = {desc_len}")));
+            return Err(ReaderError::RecordFormatError(format!(
+                "Invalid record length. Len = {len}, Desc_len = {desc_len}"
+            )));
         }
 
         let mut desc_buf = vec![0u8; desc_len as usize];

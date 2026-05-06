@@ -29,15 +29,20 @@ fn main() -> Result<(), ParserError> {
             |e| ParserError::ReaderError(parser::ReaderError::FileFormatError(format!("{e}"))),
         )?;
 
-    let txes = tx_reader.read_vector().map_err(|e| ParserError::ReaderError(e))?;
+    let txes = tx_reader
+        .read_vector()
+        .map_err(|e| ParserError::ReaderError(e))?;
 
     let writer = std::io::stdout().lock();
 
     let mut tx_writer =
         TransactionWriterFactory::create_transaction_writer(args.output_format, writer).map_err(
-            |e| ParserError::WriterError(parser::WriterError::WriterError(format!("{e}"))))?;
+            |e| ParserError::WriterError(parser::WriterError::WriterError(format!("{e}"))),
+        )?;
 
-    tx_writer.write_vector(&txes).map_err(|e| ParserError::WriterError(e))?;
+    tx_writer
+        .write_vector(&txes)
+        .map_err(|e| ParserError::WriterError(e))?;
 
     Ok(())
 }

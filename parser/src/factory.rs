@@ -49,13 +49,13 @@ pub struct TransactionReaderFactory {}
 
 impl TransactionReaderFactory {
     /// Creates a new TransactionReader instance.
-    /// 
+    ///
     /// #Examples
-    /// 
+    ///
     /// ```
     /// use std::io::Cursor;
     /// use parser::{TransactionReaderFactory, TransactionReader, Format};
-    /// 
+    ///
     /// let cursor = Cursor::new(vec![0; 100]);
     /// let reader = TransactionReaderFactory::create_transaction_reader(Format::BIN, cursor);
     /// ```
@@ -77,12 +77,12 @@ pub struct TransactionWriterFactory {}
 
 impl TransactionWriterFactory {
     /// Creates a new TransactionWriter instance.
-    /// 
+    ///
     /// #Examples
     /// ```
     /// use std::io::Cursor;
     /// use parser::{TransactionWriterFactory, TransactionWriter, Format};
-    /// 
+    ///
     /// let cursor = Cursor::new(vec![0; 100]);
     /// let writer = TransactionWriterFactory::create_transaction_writer(Format::BIN, cursor);
     /// ```

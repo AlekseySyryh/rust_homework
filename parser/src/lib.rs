@@ -6,9 +6,9 @@ mod txt;
 
 pub use bin::{BinReader, BinWriter};
 pub use csv::{CsvReader, CsvWriter};
-pub use error::{ReaderError, WriterError, ValidationError, ParserError};
-pub use txt::{TxtReader, TxtWriter};
+pub use error::{ParserError, ReaderError, ValidationError, WriterError};
 pub use factory::{Format, TransactionReaderFactory, TransactionWriterFactory};
+pub use txt::{TxtReader, TxtWriter};
 
 use std::{fmt::Display, str::FromStr};
 
@@ -114,6 +114,21 @@ impl Transaction {
         } else {
             Ok(())
         }
+    }
+}
+
+impl Display for Transaction {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(&format!("tx_id: {}, tx_type: {}, from_user_id: {}, to_user_id: {}, amount: {}, timestamp: {}, status: {}, description: \"{}\"",
+            &self.tx_id,
+            &self.tx_type,
+            &self.from_user_id,
+            &self.to_user_id,
+            &self.amount,
+            &self.timestamp,
+            &self.status,
+            &self.description
+        ))
     }
 }
 
