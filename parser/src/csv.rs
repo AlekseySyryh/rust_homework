@@ -249,7 +249,7 @@ impl<W: Write> TransactionWriter for CsvWriter<W> {
 
 impl<W: Write> Drop for CsvWriter<W> {
     fn drop(&mut self) {
-        self.writer.flush().unwrap();
+        let _ = self.writer.flush();
     }
 }
 

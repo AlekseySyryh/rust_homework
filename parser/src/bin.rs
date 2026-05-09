@@ -314,7 +314,7 @@ impl<W: Write> TransactionWriter for BinWriter<W> {
 
 impl<W: Write> Drop for BinWriter<W> {
     fn drop(&mut self) {
-        self.writer.flush().unwrap();
+        let _ = self.writer.flush();
     }
 }
 

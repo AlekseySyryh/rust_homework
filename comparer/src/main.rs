@@ -1,5 +1,7 @@
 use std::{
-    collections::{HashMap, HashSet}, fs::File, path::PathBuf
+    collections::{HashMap, HashSet},
+    fs::File,
+    path::PathBuf,
 };
 
 use clap::Parser;
@@ -9,15 +11,19 @@ use parser::{Format, ReaderError, Transaction, TransactionReaderFactory};
 #[command(name = "comparer")]
 #[command(version = "1.0")]
 struct Args {
-    #[arg(long)]
+    /// First file to compare
+    #[arg(long, value_name = "file")]
     file1: PathBuf,
 
+    /// Format of the first file
     #[arg(long, value_enum)]
     file1_format: Format,
 
-    #[arg(long)]
+    /// Second file to compare
+    #[arg(long, value_name = "file")]
     file2: PathBuf,
 
+    /// Format of the second file
     #[arg(long, value_enum)]
     file2_format: Format,
 }
@@ -67,6 +73,7 @@ fn main() -> Result<(), ReaderError> {
         let mut first = true;
 
         if !only_in_1.is_empty() {
+            first = false;
             println!("Only in '{}':", args.file1.display());
             for tx_id in &only_in_1 {
                 println!("{}", &txes_1[tx_id]);
@@ -96,8 +103,8 @@ fn main() -> Result<(), ReaderError> {
                 } else {
                     println!();
                 }
-                println!("In {}: {}", args.file1.display(), &txes_1[tx_id]);
-                println!("In {}: {}", args.file2.display(), &txes_2[tx_id]);
+                println!("In '{}': {}", args.file1.display(), &txes_1[tx_id]);
+                println!("In '{}': {}", args.file2.display(), &txes_2[tx_id]);
             }
         }
     }

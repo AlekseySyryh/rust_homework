@@ -307,7 +307,7 @@ impl<W: Write> TransactionWriter for TxtWriter<W> {
 
 impl<W: Write> Drop for TxtWriter<W> {
     fn drop(&mut self) {
-        self.writer.flush().unwrap();
+        let _ = self.writer.flush();
     }
 }
 
